@@ -14,10 +14,8 @@ namespace G11_Final_MedicalApp
             this.post = post;
         }
 
-        public void ValiderRendezVous(RendezVous rv)
-        {
-            rv.Status = RendezVousStatus.Valide;
-        }
+    
+        
     } 
 
         

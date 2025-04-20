@@ -8,19 +8,13 @@ namespace G11_Final_MedicalApp
 {
     internal class Patients : HospitalMember
     {
-
-
-        public List<RendezVous> Agenda { get; } = new();
+        public Patients(string name, string lastName, int age, int id) : base(name, lastName, age, id)
+        {
+        }
 
         public void PrendreRendezVous(DateTime dateDebut, TimeSpan duree)
         {
-            var rdv = new RendezVous
-            {
-                DateDebut = dateDebut,
-                Duree = duree,
-                Patient = this
-            };
-            Agenda.Add(rdv);
+          
 
         }
     }

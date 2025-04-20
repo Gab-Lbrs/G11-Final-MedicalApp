@@ -9,7 +9,6 @@ namespace G11_Final_MedicalApp
     // Donner par doctor et voyable par staff
     internal interface Prescription
     {
-        public string Medicament { get; set; } = string.Empty;
-        public int DureeJours { get; set; }
+    
     }
 }

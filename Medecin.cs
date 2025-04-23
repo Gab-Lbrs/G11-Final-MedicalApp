@@ -6,15 +6,11 @@
         public IList<Consultation> Consultations { get; set; } =
             new List<Consultation>();
       
-        public Medecin(string nom, string lastname, int age, int id, string username, string passwordHash)
-           : base(nom, lastname, age, id, username, passwordHash)
-        { 
-           
-        }
+      
 
-      public Medecin() : base("","", 0,0,"","") { 
+        public Medecin(string name, string lastName, int age, int id, string username, string passwordHash) : base(name, lastName, age, id, username, passwordHash)
+        {
         }
-
 
         public void ConsignerConsultation(Consultation consultation)
         {

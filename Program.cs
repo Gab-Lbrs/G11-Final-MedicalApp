@@ -2,6 +2,7 @@
 using System.Runtime.Intrinsics.Arm;
 using System.Collections.Generic;
 using static G11_Final_MedicalApp.Staff;
+using static G11_Final_MedicalApp.Consultation;
 using System.Linq;
 
 namespace G11_Final_MedicalApp
@@ -33,58 +34,72 @@ namespace G11_Final_MedicalApp
 
             IRendezVousService rdvService = new RendezVousService();
             var authService = new AuthService(users);
-            
 
-            Console.WriteLine("~~~~~~~~~~~~~~~ Programme  Medical ~~~~~~~~~~~~~~~" );
 
-            // Interface de Connexion
-            Console.Write("Login : ");
-            var userName = Console.ReadLine() ?? "";
-
-            Console.Write("Password : ");
-            var password = Console.ReadLine() ?? "";
-
-            var currentUser = authService.Login(userName, password);
-
-            if (currentUser == null || userName != currentUser.Username && password != currentUser.PasswordHash)
+            while (true)
             {
-                Console.WriteLine("Identifiant Incorrect. ");
-                return;
+
+                Console.WriteLine("~~~~~~~~~~~~~~~ Programme  Medical ~~~~~~~~~~~~~~~");
+
+                // Interface de Connexion
+                Console.Write("Login : ");
+                var userName = Console.ReadLine() ?? "";
+
+                Console.Write("Password : ");
+                var password = Console.ReadLine() ?? "";
+
+                var currentUser = authService.Login(userName, password);
+
+                if (currentUser == null || userName != currentUser.Username && password != currentUser.PasswordHash)
+                {
+                    Console.WriteLine("Identifiant Incorrect. ");
+                    Console.ReadKey();
+                    continue;
+                }
+
+                //Message de confirmation de login
+
+                Console.WriteLine($"Bienvenue {currentUser.Name}\n");
+
+
+                //Affiche le menu selon le "role" du user
+                if (currentUser is Patient patientX)
+                {
+                    ShowPatientMenu(patientX, med1, rdvService);
+                }
+                else if (currentUser is Medecin MedecinX)
+                {
+                    ShowMedecinMenu(MedecinX, rdvService);
+                }
+                else if (currentUser is Staff adminX)
+                {
+                    ShowStaffMenu(adminX, rdvService);
+                }
+
+
+                Console.Write("\nSe déconnecter et revenir au login ? (O/N) : ");
+                var key = Console.ReadLine() ?? "";
+                if (!key.Equals("O", StringComparison.OrdinalIgnoreCase))
+                    break;  // exit outer loop - end program
             }
 
-            //Message de confirmation de login
-
-            Console.WriteLine($"Bienvenue {currentUser.Name}\n");
 
 
-            //Affiche le menu selon le "role" du user
-            if (currentUser is Patient patientX)
-            {
-                ShowPatientMenu(patientX , rdvService);
-            }
-            else if (currentUser is Medecin MedecinX)
-            {
-                ShowMedecinMenu(MedecinX, rdvService);
-            } else if (currentUser is Staff adminX)
-            {
-                ShowStaffMenu(adminX, rdvService);
+
+                //patient1.PrendreRendezVous(
+                //    DateTime.Parse("2025-06-05"),
+                //    TimeSpan.FromHours(2.5)
+                //    );
+
+                //var rdv = patient1.Agenda[0];
+
+
+                //Console.WriteLine($"\nRendez-vous dans l'Agenda : {patient1.Agenda.Count}");
+                //Console.WriteLine($"Statut  du RDV : {rdv.Status}");
+
             }
 
-
-
-            //patient1.PrendreRendezVous(
-            //    DateTime.Parse("2025-06-05"),
-            //    TimeSpan.FromHours(2.5)
-            //    );
-
-            //var rdv = patient1.Agenda[0];
-
-
-            //Console.WriteLine($"\nRendez-vous dans l'Agenda : {patient1.Agenda.Count}");
-            //Console.WriteLine($"Statut  du RDV : {rdv.Status}");
-        }
-
-        static void ShowPatientMenu(Patient pat, IRendezVousService rendezVousService)
+        static void ShowPatientMenu(Patient pat,Medecin med , IRendezVousService rendezVousService)
         {
             string choix;
             do
@@ -92,60 +107,53 @@ namespace G11_Final_MedicalApp
                 Console.WriteLine("\n--- MENU PATIENT ---");
                 Console.WriteLine("1 : Prendre un rendez-vous");
                 Console.WriteLine("2 : Lister mes rendez-vous");
-                Console.WriteLine("0 : Quitter");
+                Console.WriteLine("0 : Se déconnecter");
                 Console.Write("Votre choix : ");
                 choix = Console.ReadLine() ?? "";
 
                 switch (choix)
                 {
                     case "1":
-                        // Demander la date et la durée
+                        // 1) Saisie date & durée
                         Console.Write("Date (yyyy-MM-dd HH:mm) : ");
-                        if (DateTime.TryParse(Console.ReadLine(), out var date))
-                        {
-                            Console.Write("Durée en heures (ex. 1.5) : ");
-                            if (double.TryParse(Console.ReadLine(), out var heures))
-                            {
-                                pat.PrendreRendezVous(date, TimeSpan.FromHours(heures));
-                                Console.WriteLine("Rendez-Vous ajouté !");
+                        if (!DateTime.TryParse(Console.ReadLine(), out var date)) { Console.WriteLine("Date invalide."); break; }
+                        Console.Write("Durée (heures) : ");
+                        if (!double.TryParse(Console.ReadLine(), out var h)) { Console.WriteLine("Durée invalide."); break; }
 
-                                
-                            }
-                            else
-                            {
-                                Console.WriteLine("Durée invalide.");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Date invalide.");
-                        }
+                        // 2) Création via le service ⇒ on récupère le RendezVous
+                        var nouveauRdv = rdvService.PrendreRdv(pat, med, date, TimeSpan.FromHours(h));
+
+                        // 3) On le met aussi dans l'agenda du patient
+                        pat.Agenda.Add(nouveauRdv);
+
+                        Console.WriteLine($"RDV ajouté pour {nouveauRdv.DateDeRdv:yyyy-MM-dd HH:mm}, statut : {nouveauRdv.Status}");
                         break;
 
                     case "2":
                         Console.WriteLine($"\nVous avez {pat.Agenda.Count} RDV :");
-                        foreach (var rdv in pat.Agenda)
-                            Console.WriteLine($"- {rdv.DateDeRdv:yyyy-MM-dd HH:mm} " +
-                                              $"({rdv.Duree.TotalHours}h) statut : {rdv.Status}");
+                        foreach (var rv in pat.Agenda)
+                            Console.WriteLine($"- {rv.DateDeRdv:yyyy-MM-dd HH:mm} (statut : {rv.Status})");
                         break;
 
                     case "0":
-                        Console.WriteLine("Au revoir !");
-                        break;
+                        return;
 
                     default:
-                        Console.WriteLine("Choix non reconnu, réessayez.");
+                        Console.WriteLine("Choix non reconnu.");
                         break;
                 }
-
-            } while (choix != "0");
+            } while (true);
         }
 
         static void ShowMedecinMenu(Medecin med, IRendezVousService rendezVousService)
         {
+
+
             string choix;
             do
             {
+
+
                 Console.WriteLine("\n--- MENU MÉDECIN ---");
                 Console.WriteLine("1 : Consigner une consultation");
                 Console.WriteLine("2 : Lister mes consultations");
@@ -157,60 +165,70 @@ namespace G11_Final_MedicalApp
                 {
                     case "1":
                         // Consigner une nouvelle consultation
-                        if (med.Consultations == null)
+                        var rdvs = rdvService.ListerPourMedecin(med.ID).Where(rv => rv.Status == RendezVousStatus.Valide || rv.Status == RendezVousStatus.EnAttente)
+                    .ToList();
+                        if (!rdvs.Any())
                         {
-                            Console.WriteLine("Erreur : liste de consultations non initialisée.");
+                            Console.WriteLine("Vous n'avez aucun rendez-vous à consigner.");
                             break;
                         }
 
-                        // On demande le RDV associé
-                        Console.Write("Date du RDV (yyyy-MM-dd HH:mm) : ");
-                        if (!DateTime.TryParse(Console.ReadLine(), out var date))
+                        Console.WriteLine("Sélectionnez le numéro du RDV à consigner :");
+                        for (int i = 0; i < rdvs.Count; i++)
                         {
-                            Console.WriteLine("Date invalide.");
+                            var r = rdvs[i];
+                            Console.WriteLine($"{i + 1}. {r.DateDeRdv:yyyy-MM-dd HH:mm} " +
+                                              $"Patient: {r.Patient.Name} {r.Patient.LastName} (Statut: {r.Status})");
+                        }
+
+                        // 3) Lit le choix et vérifie
+                        if (!int.TryParse(Console.ReadLine(), out int idx)
+                            || idx < 1 || idx > rdvs.Count)
+                        {
+                            Console.WriteLine("Choix invalide.");
                             break;
                         }
                         // On crée un rendez-vous factice (en vrai, il faudrait le prendre depuis l'agenda)
-                        var rdv = new RendezVous
-                        {
-                            DateDeRdv = date,
-                            Duree = TimeSpan.FromHours(1),
-                            Medecin = med,
-                            Patient = null!   // a adapter : recuperer un patient existant
-                        };
+
+                        var rdvChoisi = rdvs[idx - 1];
+
+
+                   
 
                         Console.Write("Diagnostic : ");
                         var diag = Console.ReadLine() ?? "";
 
 
-                        var consult = new Consultation
-                        {
-                            Rdv = rdv,
-                            Diagnostic = diag
-                        };
+                        var consult = new Consultation(rdvChoisi, diag);
 
                         med.ConsignerConsultation(consult);
+
+                        rdvChoisi.Patient.DossierConsultations.Ajouter(consult);
+
                         Console.WriteLine("Consultation consignée.");
+
+
                         break;
 
                     case "2":
                         Console.WriteLine($"\nVous avez {med.Consultations.Count} consultations :");
                         foreach (var c in med.Consultations)
                         {
-                            Console.WriteLine($"- {c}");
+                            Console.WriteLine($"- {c.Rdv.DateDeRdv:yyyy-MM-dd HH:mm} : {c.Diagnostic}");
                         }
                         break;
 
                     case "0":
                         Console.WriteLine("Retour au menu principal.");
-                        break;
+                        return;
+
 
                     default:
                         Console.WriteLine("Choix non reconnu, réessayez.");
                         break;
                 }
 
-            } while (choix != "0");
+            } while (true);
         }
 
         static void ShowStaffMenu(Staff adm, IRendezVousService rendezVousService)
@@ -247,12 +265,13 @@ namespace G11_Final_MedicalApp
                         Console.Write("Date du RDV à valider (yyyy-MM-dd HH:mm) : ");
                         if (DateTime.TryParse(Console.ReadLine(), out var dateVal))
                         {
-                            var rdv = rdvService.ListerTousLesRdv()
-                                        .FirstOrDefault(rv => rv.DateDeRdv == dateVal);
-                            if (rdv != null)
+                            var allRdv = rdvService.ListerTousLesRdv();
+                            var targetRdv = allRdv.FirstOrDefault(rv => rv.DateDeRdv == dateVal);
+                            if (allRdv != null)
                             {
-                                adm.ValiderRendezVous(rdv);
+                                adm.ValiderRendezVous(targetRdv);
                                 Console.WriteLine("RDV validé.");
+                                Console.WriteLine($"Status du rendez-vous : {targetRdv.Status}");
                             }
                             else
                             {
@@ -275,6 +294,7 @@ namespace G11_Final_MedicalApp
                             {
                                 adm.AnnulerRendezVous(targetRdv);
                                 Console.WriteLine("RDV annulé.");
+                                Console.WriteLine($"Status du rendez-vous : { targetRdv.Status}");
                             }
                             else
                             {
@@ -289,14 +309,14 @@ namespace G11_Final_MedicalApp
 
                     case "0":
                         Console.WriteLine("Retour au menu principal.");
-                        break;
+                        return;
 
                     default:
                         Console.WriteLine("Choix non reconnu, réessayez.");
                         break;
                 }
 
-            } while (choix != "0");
+            } while (true);
         }
     }
 

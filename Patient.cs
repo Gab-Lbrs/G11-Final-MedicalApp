@@ -19,9 +19,10 @@ namespace G11_Final_MedicalApp
 
         // Construteur vide pour instanciation
         public Patient() : base("", "", 0, 0,"","") { }
-        
 
-        
+
+        public DossierMedicale<Consultation> DossierConsultations { get; }
+        = new DossierMedicale<Consultation>();
 
 
         // Methode utiliser par les patient pour ajouter leur rendez-vous

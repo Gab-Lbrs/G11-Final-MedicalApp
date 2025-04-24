@@ -32,6 +32,7 @@ namespace G11_Final_MedicalApp
         {
             if (rdv == null) throw new ArgumentNullException(nameof(rdv));
             rdv.Status = RendezVousStatus.Valide;
+            
         }
         
 

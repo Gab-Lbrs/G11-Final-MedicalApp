@@ -10,6 +10,7 @@ namespace G11_Final_MedicalApp
     {
         public RendezVousService() {}
 
+        private IList<RendezVous> store = new List<RendezVous>();
         public List<RendezVous> ListerPourMedecin(int ID)
         {
             //liste pour medecin a inmplementer
@@ -24,9 +25,19 @@ namespace G11_Final_MedicalApp
             return RdvList;
         }
 
-        public void PrendreRdv(Patient patient, Medecin medecin, DateTime dateDebut, TimeSpan duree)
+        public RendezVous PrendreRdv(Patient patient, Medecin medecin, DateTime dateDebut, TimeSpan duree)
         {
-            throw new NotImplementedException();
+            var rv = new RendezVous { Patient = patient, DateDeRdv = dateDebut, Duree = duree };
+            
+           
+            store.Add(rv);
+            return rv;
+        }
+
+        public IEnumerable<RendezVous> ListerTouslesRendezVous() => store;
+        public IEnumerable<RendezVous> ListeMedecin(int ID)
+        {
+            return store.Where(rv => rv.Medecin.ID == ID );
         }
     }
 }

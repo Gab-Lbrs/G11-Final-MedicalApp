@@ -12,7 +12,8 @@ namespace G11_Final_MedicalApp
         /// Prend un nouveau rendez-vous pour un patient et un médecin,  
         /// ou lève ConflitRendezVousException en cas de chevauchement.
         /// </summary>
-        void PrendreRdv(Patient patient, Medecin medecin, DateTime dateDebut, TimeSpan duree);
+        RendezVous PrendreRdv(Patient patient, Medecin medecin, DateTime dateDebut, TimeSpan duree);
+        
 
         /// <summary>
         /// Liste tous les rendez-vous (tous statuts confondus).

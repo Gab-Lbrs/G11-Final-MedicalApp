@@ -15,7 +15,7 @@ namespace G11_Final_MedicalApp
 
 
         // Liste pour les redez vous pris par les patient dans le Main programme
-        public List<RendezVous> Agenda { get; } = new List<RendezVous>();
+        public List<RendezVous> Agenda { get; set; } = new List<RendezVous>();
 
         // Construteur vide pour instanciation
         public Patient() : base("", "", 0, 0,"","") { }

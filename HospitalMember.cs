@@ -40,7 +40,8 @@ namespace G11_Final_MedicalApp
             this.age = age;
             this.id = id;
             this.username = username;
-            this.passwordHash = passwordHash;  
+            this.passwordHash = passwordHash; 
+            
         }
         // Setter and getters for variables
         public string Name

@@ -45,6 +45,8 @@ namespace G11_Final_MedicalApp
 
         public override string ToString()
             => $"Administratif : {Name} {LastName} (ID : {ID})";
+
+        
     } 
 
         

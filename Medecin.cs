@@ -12,6 +12,10 @@
         {
         }
 
+        public Medecin() { }   
+
+
+
         public void ConsignerConsultation(Consultation consultation)
         {
             if (consultation == null)

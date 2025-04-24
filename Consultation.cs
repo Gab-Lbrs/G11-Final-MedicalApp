@@ -10,6 +10,15 @@ namespace G11_Final_MedicalApp
     //Consultation 
     public class Consultation
     {
+        private string diag;
+
+        public Consultation(RendezVous rdv, string diag)
+        {
+            Rdv = rdv;
+            this.diag = diag;
+        }
+
+        public Consultation() { }
 
         public required RendezVous Rdv {  get; set; }
         public required string Diagnostic { get; set; }

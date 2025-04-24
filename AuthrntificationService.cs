@@ -11,22 +11,21 @@ namespace G11_Final_MedicalApp
         // Stockage en mémoire pour l’exemple
         private readonly List<HospitalMember> users;
 
-        public AuthService(IEnumerable<HospitalMember> users)
+        public AuthService(IEnumerable<HospitalMember> Users)
         {
-            users = users.ToList() ??
-                throw new ArgumentNullException(nameof(users));
+            users = Users.ToList() ?? new List<HospitalMember> ();
+      
         }
 
         /// <summary>Retourne l’utilisateur si les infos sont bonnes, sinon null.</summary>
         public HospitalMember? Login(string username, string password)
         {
             // Recherche l’utilisateur
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-                return null;
+            //if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            //    return null;
 
             // Compare le mot de passe (clair ici)
-             return users
-           .FirstOrDefault(u =>
+             return users.FirstOrDefault(u =>
                u.Username.Equals(username, StringComparison.OrdinalIgnoreCase)
                && u.PasswordHash.Equals(password, StringComparison.OrdinalIgnoreCase));
         }

@@ -8,18 +8,19 @@ namespace G11_Final_MedicalApp
 {
     public interface IRappelService
     {
-        /// <summary>
+       
         /// Service d’événements de rappel pour les rendez-vous.
-        /// </summary>
-        public interface IRappelService
-        {
-            /// <summary>
-            /// Événement déclenché 24 h avant un rendez‑vous.
-            /// </summary>
-            event EventHandler<RendezVous> RdvEnApproche;
+        
 
-            /// <summary>Vérifie la date du rdv et déclenche l’événement si proche.</summary>
-            void VerifierEtNotifier(RendezVous rendezVous);
-        }
+
+        /// <summary>
+        /// Levé lorsqu’un rappel arrive à échéance.
+        /// </summary>
+        event EventHandler<RendezVous> RdvEnApproche;
+
+        /// <summary>
+        /// Planifie un rappel pour le RDV donné, X temps avant la dateDebut.
+        /// </summary>
+        void PlanifierRappel(RendezVous rdv, TimeSpan avant);
     }
 }

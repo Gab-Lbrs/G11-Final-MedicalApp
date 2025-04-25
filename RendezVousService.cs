@@ -8,36 +8,38 @@ namespace G11_Final_MedicalApp
 {
     public class RendezVousService : IRendezVousService
     {
-        public RendezVousService() {}
+        // ta storage interne
+        private readonly List<RendezVous> store = new List<RendezVous>();
 
-        private IList<RendezVous> store = new List<RendezVous>();
-        public List<RendezVous> ListerPourMedecin(int ID)
+        //  Signature et type de retour conforme à l'interface
+        public RendezVous PrendreRdv(Patient patient,Medecin medecin,DateTime dateDebut,TimeSpan duree)
         {
-            //liste pour medecin a inmplementer
-            List<RendezVous> RdvList = new List<RendezVous>();
-            return RdvList;
+            //if (store.Any(rv => rv.Patient.ID == patient.ID && rv.Medecin.ID == medecin.ID &&
+            //   rv.DateDeRdv == dateDebut))
+            //{
+            //    throw new ConflitRendezVousException(
+            //        $"Un RDV existe déjà le {dateDebut:yyyy-MM-dd HH:mm}.");     
+            //}
+
+
+            var rdv = new RendezVous
+            {
+                Patient = patient,
+                Medecin = medecin,
+                DateDeRdv = dateDebut,
+                Duree = duree
+                // Status = EnAttente par défaut
+            };
+            rdv.Patient.Agenda.Add( rdv ); 
+            store.Add(rdv);
+            return rdv;
         }
 
+        //  Retourne LE store, pas une nouvelle liste vide
+        public List<RendezVous> ListerTousLesRdv() => store;
 
-        public List<RendezVous> ListerTousLesRdv()
-        {
-            List<RendezVous> RdvList = new List<RendezVous>();
-            return RdvList;
-        }
-
-        public RendezVous PrendreRdv(Patient patient, Medecin medecin, DateTime dateDebut, TimeSpan duree)
-        {
-            var rv = new RendezVous { Patient = patient, DateDeRdv = dateDebut, Duree = duree };
-            
-           
-            store.Add(rv);
-            return rv;
-        }
-
-        public IEnumerable<RendezVous> ListerTouslesRendezVous() => store;
-        public IEnumerable<RendezVous> ListeMedecin(int medecinID)
-        {
-            return store.Where(rv => rv.Medecin.ID == medecinID );
-        }
+        //  Filtre et retourne une List<RendezVous>
+        public List<RendezVous> ListerPourMedecin(int ID)=> store
+               .Where(rv => rv.Medecin.ID == ID).ToList();
     }
 }

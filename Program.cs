@@ -32,8 +32,19 @@ namespace G11_Final_MedicalApp
             users.Add(admin1);
 
 
-            IRendezVousService rdvService = new RendezVousService();
+           
+
             var authService = new AuthService(users);
+
+
+            var rappelService = new RappelService();
+            rappelService.RdvEnApproche += (s, rdv) =>
+            {
+                Console.WriteLine($"\n[ RAPPEL ] RDV imminent le {rdv.DateDeRdv:yyyy-MM-dd HH:mm} " +
+                                  $"pour {rdv.Patient.Name} {rdv.Patient.LastName}");
+                Console.Write("Votre choix : ");
+            };
+
 
 
             while (true)
@@ -65,12 +76,12 @@ namespace G11_Final_MedicalApp
                 //Affiche le menu selon le "role" du user
                 if (currentUser is Patient patientX)
                 {
-                    ShowPatientMenu(patientX, med1, rdvService);
+                    ShowPatientMenu(patientX, med1, rdvService, rappelService);
                 }
                 else if (currentUser is Medecin MedecinX)
                 {
                     ShowMedecinMenu(MedecinX, rdvService);
-                }
+                } 
                 else if (currentUser is Staff adminX)
                 {
                     ShowStaffMenu(adminX, rdvService);
@@ -84,22 +95,9 @@ namespace G11_Final_MedicalApp
             }
 
 
-
-
-                //patient1.PrendreRendezVous(
-                //    DateTime.Parse("2025-06-05"),
-                //    TimeSpan.FromHours(2.5)
-                //    );
-
-                //var rdv = patient1.Agenda[0];
-
-
-                //Console.WriteLine($"\nRendez-vous dans l'Agenda : {patient1.Agenda.Count}");
-                //Console.WriteLine($"Statut  du RDV : {rdv.Status}");
-
             }
 
-        static void ShowPatientMenu(Patient pat,Medecin med , IRendezVousService rendezVousService)
+        static void ShowPatientMenu(Patient pat,Medecin med , IRendezVousService rendezVousService, IRappelService rappelService)
         {
             string choix;
             do
@@ -121,13 +119,22 @@ namespace G11_Final_MedicalApp
                         if (!double.TryParse(Console.ReadLine(), out var h)) { Console.WriteLine("Durée invalide."); break; }
 
                         // 2) Création via le service on récupère le RendezVous
-                        rdvService.PrendreRdv(pat, med, date, TimeSpan.FromHours(h));
-                        var nouveauRdv = rdvService.ListerTousLesRdv().LastOrDefault(rv => rv.Patient == pat && rv.DateDeRdv == date);
+                        
+                        var nouveauRdv = rendezVousService.PrendreRdv(pat, med, date, TimeSpan.FromHours(h));
                         // 3) On le met aussi dans l'agenda du patient
-                       
-                            pat.Agenda.Add(nouveauRdv);
+                        if (nouveauRdv == null)
+                        {
+                            Console.WriteLine("Erreur interne : impossible de créer le RDV.");
+                            break;
+                        }
+                        Console.WriteLine($"RDV ajouté pour {nouveauRdv.DateDeRdv}.");
 
-                        Console.WriteLine($"RDV ajouté pour {nouveauRdv.DateDeRdv:yyyy-MM-dd HH:mm}, statut : {nouveauRdv.Status}");
+                        //pat.Agenda.Add(nouveauRdv);
+
+                        rappelService.PlanifierRappel(nouveauRdv, TimeSpan.FromMinutes(30));
+
+                        Console.WriteLine($"RDV ajouté pour {nouveauRdv.DateDeRdv:yyyy-MM-dd HH:mm}. " +
+                                          $"Rappel 30 min avant programmé.");
                         break;
 
                     case "2":
@@ -172,6 +179,16 @@ namespace G11_Final_MedicalApp
                         {
                             Console.WriteLine("Vous n'avez aucun rendez-vous à consigner.");
                             break;
+                        }
+
+                        // → Affiche numéroté
+                        Console.WriteLine("Liste des RDV du médecin :");
+                        for (int i = 0; i < rdvs.Count; i++)
+                        {
+                            var r = rdvs[i];
+                            Console.WriteLine(
+                                $"{i + 1}. {r.DateDeRdv:yyyy-MM-dd HH:mm} — Statut : {r.Status}"
+                            );
                         }
 
                         Console.WriteLine("Sélectionnez le numéro du RDV à consigner :");
@@ -232,12 +249,19 @@ namespace G11_Final_MedicalApp
             } while (true);
         }
 
-        static void ShowStaffMenu(Staff adm, IRendezVousService rendezVousService)
+        static void ShowStaffMenu(Staff adm, IRendezVousService rdvService)
         {
             
             string choix;
+            var enAttente = rdvService.ListerTousLesRdv()
+                           .Where(rv => rv.Status == RendezVousStatus.EnAttente)
+                           .ToList();
+
             do
             {
+
+                
+
                 Console.WriteLine("\n--- MENU ADMINISTRATIF ---");
                 Console.WriteLine("1 : Lister tous les RDV en attente");
                 Console.WriteLine("2 : Valider un RDV");
@@ -249,67 +273,61 @@ namespace G11_Final_MedicalApp
                 switch (choix)
                 {
                     case "1":
-                        
-                        //var listRdv = rendezVousService.ListerTousLesRdv();
-                        var enAttente = rdvService.ListerTousLesRdv()
-                            .Where(rv => rv.Status == RendezVousStatus.EnAttente)
-                            .ToList();
                         Console.WriteLine($"\nRDV en attente ({enAttente.Count}) :");
-                        foreach (var rv in enAttente)
+                        for (int i = 0; i < enAttente.Count; i++)
                         {
-                            Console.WriteLine($"- {rv.DateDeRdv:yyyy-MM-dd HH:mm} " +
-                                              $"Patient: {rv.Patient.Name} {rv.Patient.LastName}");
+                            var r = enAttente[i];
+                            Console.WriteLine(
+                                $"{i + 1}. {r.DateDeRdv:yyyy-MM-dd HH:mm}  " +
+                                $"Patient: {r.Patient.Name} {r.Patient.LastName}"
+                            );
                         }
                         break;
 
                     case "2":
-                        Console.Write("Date du RDV à valider (yyyy-MM-dd HH:mm) : ");
-                        if (DateTime.TryParse(Console.ReadLine(), out var dateVal))
+                        if (!enAttente.Any())
                         {
-                            var allRdv = rdvService.ListerTousLesRdv();
-                            var targetRdv = allRdv.FirstOrDefault(rv => rv.DateDeRdv == dateVal);
-                            if (targetRdv != null)
-                            {
-                                adm.ValiderRendezVous(targetRdv);
-                                Console.WriteLine("RDV validé.");
-                                Console.WriteLine($"Status du rendez-vous : {targetRdv.Status}");
-                            }
-                            else
-                            {
-                                Console.WriteLine("RDV introuvable.");
-                            }
+                            Console.WriteLine("Aucun RDV en attente.");
+                            break;
+                        }
+
+                        Console.Write("Numéro du RDV à valider : ");
+                        if (int.TryParse(Console.ReadLine(), out int numVal)
+                            && numVal >= 1 && numVal <= enAttente.Count)
+                        {
+                            var rdvToValider = enAttente[numVal - 1];
+                            adm.ValiderRendezVous(rdvToValider);
+                            Console.WriteLine($"RDV #{numVal} validé (statut : {rdvToValider.Status}).");
                         }
                         else
                         {
-                            Console.WriteLine("Date invalide.");
+                            Console.WriteLine("Numéro invalide.");
                         }
                         break;
 
                     case "3":
-                        Console.Write("Date du RDV à annuler (yyyy-MM-dd HH:mm) : ");
-                        if (DateTime.TryParse(Console.ReadLine(), out var dateAnn))
+                        if (!enAttente.Any())
                         {
-                            var allRdv = rdvService.ListerTousLesRdv();
-                            var targetRdv = allRdv.FirstOrDefault(rv => rv.DateDeRdv == dateAnn);
-                            if (targetRdv != null)
-                            {
-                                adm.AnnulerRendezVous(targetRdv);
-                                Console.WriteLine("RDV annulé.");
-                                Console.WriteLine($"Status du rendez-vous : { targetRdv.Status}");
-                            }
-                            else
-                            {
-                                Console.WriteLine("RDV introuvable.");
-                            }
+                            Console.WriteLine("Aucun RDV en attente à annuler.");
+                            break;
+                        }
+
+                        Console.Write("Numéro du RDV à annuler : ");
+                        if (int.TryParse(Console.ReadLine(), out int numAnn)
+                            && numAnn >= 1 && numAnn <= enAttente.Count)
+                        {
+                            var rdvToAnnuler = enAttente[numAnn - 1];
+                            adm.AnnulerRendezVous(rdvToAnnuler);
+                            Console.WriteLine($"RDV #{numAnn} annulé (statut : {rdvToAnnuler.Status}).");
                         }
                         else
                         {
-                            Console.WriteLine("Date invalide.");
+                            Console.WriteLine("Numéro invalide.");
                         }
                         break;
 
                     case "0":
-                        Console.WriteLine("Retour au menu principal.");
+                        // on sort et on revient au login/menu principal
                         return;
 
                     default:

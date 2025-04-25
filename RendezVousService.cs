@@ -35,9 +35,9 @@ namespace G11_Final_MedicalApp
         }
 
         public IEnumerable<RendezVous> ListerTouslesRendezVous() => store;
-        public IEnumerable<RendezVous> ListeMedecin(int ID)
+        public IEnumerable<RendezVous> ListeMedecin(int medecinID)
         {
-            return store.Where(rv => rv.Medecin.ID == ID );
+            return store.Where(rv => rv.Medecin.ID == medecinID );
         }
     }
 }

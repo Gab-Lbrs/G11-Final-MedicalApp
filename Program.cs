@@ -120,11 +120,12 @@ namespace G11_Final_MedicalApp
                         Console.Write("Durée (heures) : ");
                         if (!double.TryParse(Console.ReadLine(), out var h)) { Console.WriteLine("Durée invalide."); break; }
 
-                        // 2) Création via le service ⇒ on récupère le RendezVous
-                        var nouveauRdv = rdvService.PrendreRdv(pat, med, date, TimeSpan.FromHours(h));
-
+                        // 2) Création via le service on récupère le RendezVous
+                        rdvService.PrendreRdv(pat, med, date, TimeSpan.FromHours(h));
+                        var nouveauRdv = rdvService.ListerTousLesRdv().LastOrDefault(rv => rv.Patient == pat && rv.DateDeRdv == date);
                         // 3) On le met aussi dans l'agenda du patient
-                        pat.Agenda.Add(nouveauRdv);
+                       
+                            pat.Agenda.Add(nouveauRdv);
 
                         Console.WriteLine($"RDV ajouté pour {nouveauRdv.DateDeRdv:yyyy-MM-dd HH:mm}, statut : {nouveauRdv.Status}");
                         break;
@@ -249,8 +250,8 @@ namespace G11_Final_MedicalApp
                 {
                     case "1":
                         
-                        var listRdv = rendezVousService.ListerTousLesRdv();
-                        var enAttente = listRdv
+                        //var listRdv = rendezVousService.ListerTousLesRdv();
+                        var enAttente = rdvService.ListerTousLesRdv()
                             .Where(rv => rv.Status == RendezVousStatus.EnAttente)
                             .ToList();
                         Console.WriteLine($"\nRDV en attente ({enAttente.Count}) :");
@@ -267,7 +268,7 @@ namespace G11_Final_MedicalApp
                         {
                             var allRdv = rdvService.ListerTousLesRdv();
                             var targetRdv = allRdv.FirstOrDefault(rv => rv.DateDeRdv == dateVal);
-                            if (allRdv != null)
+                            if (targetRdv != null)
                             {
                                 adm.ValiderRendezVous(targetRdv);
                                 Console.WriteLine("RDV validé.");
